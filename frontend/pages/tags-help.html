@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ДокПро — Справочник тегов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .help-content { max-width: 860px; }
+
+    .section-block {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--space-6);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--color-divider);
+      background: var(--color-surface-2);
+    }
+
+    .section-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-icon-blue   { background: var(--color-primary-light); color: var(--color-primary); }
+    .section-icon-green  { background: var(--color-success-light); color: var(--color-success); }
+    .section-icon-yellow { background: var(--color-warning-light); color: var(--color-warning); }
+    .section-icon-gray   { background: var(--color-surface-offset); color: var(--color-text-muted); }
+
+    .section-title { font-size: var(--text-base); font-weight: 600; }
+    .section-subtitle { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 1px; }
+
+    .tags-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1px;
+      background: var(--color-divider);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-1);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface);
+      transition: background var(--transition);
+    }
+
+    .tag-row:hover { background: var(--color-surface-offset); }
+
+    .tag-chip {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+      flex-shrink: 0;
+      border: 1px solid oklch(from var(--color-primary) l c h / 0.2);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      user-select: all;
+    }
+
+    .tag-chip:hover {
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .tag-chip.tag-loop {
+      background: var(--color-warning-light);
+      color: var(--color-warning);
+      border-color: oklch(from var(--color-warning) l c h / 0.2);
+    }
+
+    .tag-chip.tag-loop:hover {
+      background: var(--color-warning);
+      color: #fff;
+    }
+
+    .tag-desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      line-height: 1.5;
+      text-align: left;
+      word-break: break-word;
+    }
+
+    /* Пример использования */
+    .example-block {
+      padding: var(--space-5);
+      border-top: 1px solid var(--color-divider);
+    }
+
+    .example-label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    .code-block {
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--color-text);
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-tag { color: var(--color-primary); }
+    .code-tag-loop { color: var(--color-warning); }
+    .code-text { color: var(--color-text-muted); }
+
+    .copy-hint {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+      font-family: var(--font-body);
+    }
+
+    /* Уведомление о копировании */
+    .copied-toast {
+      position: fixed;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--color-text);
+      color: var(--color-text-inverse);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .copied-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Шапка страницы */
+    .help-hero {
+      background: var(--color-primary-light);
+      border: 1px solid oklch(from var(--color-primary) l c h / 0.15);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin-bottom: var(--space-6);
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+    }
+
+    .help-hero-icon {
+      width: 48px; height: 48px;
+      background: var(--color-primary);
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: #fff;
+    }
+
+    .help-hero-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-1);
+    }
+
+    .help-hero-desc {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      max-width: 60ch;
+    }
+
+    @media (max-width: 600px) {
+      .tags-grid { grid-template-columns: 1fr; }
+      .help-hero { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="hamburger" id="hamburger" aria-label="Меню">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a href="./templates.html" class="btn btn-ghost btn-sm" style="color:var(--color-text-muted)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Шаблоны
+        </a>
+        <span style="color:var(--color-text-faint)">/</span>
+        <span class="topbar-title">Справочник тегов</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" id="theme-toggle" onclick="Layout.toggleTheme()"></button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="help-content">
+
+        <!-- Герой -->
+        <div class="help-hero">
+          <div class="help-hero-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <div>
+            <div class="help-hero-title">Справочник тегов для шаблонов</div>
+            <div class="help-hero-desc">Вставьте теги в документ Word в нужных местах. При генерации документа теги автоматически заменятся реальными данными. Нажмите на тег — он скопируется в буфер обмена.</div>
+          </div>
+        </div>
+
+        <!-- БЛОК 1: Реквизиты компании -->
+        <div class="section-block">
+          <div class="section-head">
+            <div class="section-icon section-icon-blue">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21V11h6v10"/></svg>
+            </div>
+            <div>
+              <div class="section-title">Реквизиты компании</div>
+              <div class="section-subtitle">Данные вашей организации (заполняются в разделе «Компании»)</div>
+            </div>
+          </div>
+          <div class="tags-grid">
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.name}}</span><span class="tag-desc">Полное наименование</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.short_name}}</span><span class="tag-desc">Краткое наименование</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.inn}}</span><span class="tag-desc">ИНН</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.kpp}}</span><span class="tag-desc">КПП (для ЮЛ)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.ogrn}}</span><span class="tag-desc">ОГРН (для ЮЛ)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.ogrnip}}</span><span class="tag-desc">ОГРНИП (для ИП)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.entity_type}}</span><span class="tag-desc">Тип: «ЮЛ» или «ИП»</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.address}}</span><span class="tag-desc">Юридический адрес</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.postal_address}}</span><span class="tag-desc">Почтовый адрес</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.bank}}</span><span class="tag-desc">Наименование банка</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.bik}}</span><span class="tag-desc">БИК банка</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.account}}</span><span class="tag-desc">Расчётный счёт</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.corr_account}}</span><span class="tag-desc">Корреспондентский счёт</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.signatory}}</span><span class="tag-desc">ФИО подписанта</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.position}}</span><span class="tag-desc">Должность подписанта</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.basis}}</span><span class="tag-desc">Основание (действует на основании...)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.phone}}</span><span class="tag-desc">Телефон</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.email}}</span><span class="tag-desc">Email</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.ip_fullname}}</span><span class="tag-desc">ФИО полностью (для ИП)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.ip_lastname}}</span><span class="tag-desc">Фамилия ИП</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.ip_firstname}}</span><span class="tag-desc">Имя ИП</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{company.ip_patronymic}}</span><span class="tag-desc">Отчество ИП</span></div>
+          </div>
+        </div>
+
+        <!-- БЛОК 2: Реквизиты контрагента -->
+        <div class="section-block">
+          <div class="section-head">
+            <div class="section-icon section-icon-green">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="section-title">Реквизиты контрагента</div>
+              <div class="section-subtitle">Данные второй стороны договора (заполняются в разделе «Контрагенты»)</div>
+            </div>
+          </div>
+          <div class="tags-grid">
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.name}}</span><span class="tag-desc">Полное наименование</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.short_name}}</span><span class="tag-desc">Краткое наименование</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.inn}}</span><span class="tag-desc">ИНН</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.kpp}}</span><span class="tag-desc">КПП (для ЮЛ)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.ogrn}}</span><span class="tag-desc">ОГРН (для ЮЛ)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.ogrnip}}</span><span class="tag-desc">ОГРНИП (для ИП)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.entity_type}}</span><span class="tag-desc">Тип: «ЮЛ» или «ИП»</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.address}}</span><span class="tag-desc">Юридический адрес</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.postal_address}}</span><span class="tag-desc">Почтовый адрес</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.bank}}</span><span class="tag-desc">Наименование банка</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.bik}}</span><span class="tag-desc">БИК банка</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.account}}</span><span class="tag-desc">Расчётный счёт</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.corr_account}}</span><span class="tag-desc">Корреспондентский счёт</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.signatory}}</span><span class="tag-desc">ФИО подписанта</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.position}}</span><span class="tag-desc">Должность подписанта</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.basis}}</span><span class="tag-desc">Основание</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.phone}}</span><span class="tag-desc">Телефон</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.email}}</span><span class="tag-desc">Email</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.ip_fullname}}</span><span class="tag-desc">ФИО полностью (для ИП)</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.ip_lastname}}</span><span class="tag-desc">Фамилия ИП</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.ip_firstname}}</span><span class="tag-desc">Имя ИП</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{contractor.ip_patronymic}}</span><span class="tag-desc">Отчество ИП</span></div>
+          </div>
+        </div>
+
+        <!-- БЛОК 3: Поля документа -->
+        <div class="section-block">
+          <div class="section-head">
+            <div class="section-icon section-icon-yellow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="section-title">Поля документа</div>
+              <div class="section-subtitle">Заполняются при создании документа</div>
+            </div>
+          </div>
+          <div class="tags-grid">
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{doc.number}}</span><span class="tag-desc">Номер документа</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{doc.date}}</span><span class="tag-desc">Дата документа</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{doc.total}}</span><span class="tag-desc">Итоговая сумма цифрами</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{doc.total_words}}</span><span class="tag-desc">Итоговая сумма прописью</span></div>
+          </div>
+        </div>
+
+        <!-- БЛОК 4: Таблица услуг -->
+        <div class="section-block">
+          <div class="section-head">
+            <div class="section-icon section-icon-gray">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </div>
+            <div>
+              <div class="section-title">Таблица услуг (цикл)</div>
+              <div class="section-subtitle">Используется для вывода списка позиций в документе</div>
+            </div>
+          </div>
+          <div class="tags-grid">
+            <div class="tag-row"><span class="tag-chip tag-loop" onclick="copyTag(this)">{{#services}}</span><span class="tag-desc">Начало блока таблицы услуг</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{service.name}}</span><span class="tag-desc">Наименование услуги</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{service.qty}}</span><span class="tag-desc">Количество</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{service.unit}}</span><span class="tag-desc">Единица измерения</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{service.price}}</span><span class="tag-desc">Цена за единицу</span></div>
+            <div class="tag-row"><span class="tag-chip" onclick="copyTag(this)">{{service.total}}</span><span class="tag-desc">Сумма по строке</span></div>
+            <div class="tag-row"><span class="tag-chip tag-loop" onclick="copyTag(this)">{{/services}}</span><span class="tag-desc">Конец блока таблицы услуг</span></div>
+          </div>
+
+          <!-- Пример таблицы в Word -->
+          <div class="example-block">
+            <div class="example-label">Пример — как выглядит строка таблицы в Word-шаблоне</div>
+            <div class="code-block">
+              <span class="copy-hint">Шаблон .docx</span>
+              <span class="code-tag">{{#services}}</span><br>
+              | <span class="code-tag">{{service.name}}</span>
+              <span class="code-text"> | </span>
+              <span class="code-tag">{{service.qty}}</span>
+              <span class="code-text"> | </span>
+              <span class="code-tag">{{service.unit}}</span>
+              <span class="code-text"> | </span>
+              <span class="code-tag">{{service.price}}</span>
+              <span class="code-text"> | </span>
+              <span class="code-tag">{{service.total}}</span>
+              <span class="code-text"> |</span><br>
+              <span class="code-tag">{{/services}}</span><br><br>
+              <span class="code-text">Итого: </span><span class="code-tag">{{doc.total}}</span> руб.<br>
+              <span class="code-text">Итого: </span><span class="code-tag">{{doc.total_words}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- БЛОК 5: Инструкция -->
+        <div class="section-block">
+          <div class="section-head">
+            <div class="section-icon section-icon-blue">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <div class="section-title">Как подготовить шаблон</div>
+              <div class="section-subtitle">Пошаговая инструкция</div>
+            </div>
+          </div>
+          <div style="padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4);">
+            <div style="display:flex;gap:var(--space-4);align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;flex-shrink:0">1</div>
+              <div>
+                <div style="font-weight:600;font-size:var(--text-sm);margin-bottom:4px">Создайте документ в Word (.docx)</div>
+                <div style="font-size:var(--text-sm);color:var(--color-text-muted)">Оформите документ как обычно — с шапкой, текстом, таблицами и подписями.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:var(--space-4);align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;flex-shrink:0">2</div>
+              <div>
+                <div style="font-weight:600;font-size:var(--text-sm);margin-bottom:4px">Вставьте теги в нужные места</div>
+                <div style="font-size:var(--text-sm);color:var(--color-text-muted)">Замените реальные данные на теги из этого справочника. Теги пишутся в двойных фигурных скобках строго без пробелов внутри: <span style="font-family:monospace;background:var(--color-primary-light);color:var(--color-primary);padding:1px 5px;border-radius:3px">{{company.inn}}</span></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:var(--space-4);align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;flex-shrink:0">3</div>
+              <div>
+                <div style="font-weight:600;font-size:var(--text-sm);margin-bottom:4px">Для таблицы услуг — используйте цикл</div>
+                <div style="font-size:var(--text-sm);color:var(--color-text-muted)">В строке-шаблоне таблицы поставьте <span style="font-family:monospace;background:var(--color-warning-light);color:var(--color-warning);padding:1px 5px;border-radius:3px">{{#services}}</span> перед строкой и <span style="font-family:monospace;background:var(--color-warning-light);color:var(--color-warning);padding:1px 5px;border-radius:3px">{{/services}}</span> после — система автоматически размножит строку по количеству позиций.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:var(--space-4);align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;flex-shrink:0">4</div>
+              <div>
+                <div style="font-weight:600;font-size:var(--text-sm);margin-bottom:4px">Загрузите шаблон</div>
+                <div style="font-size:var(--text-sm);color:var(--color-text-muted)">Перейдите в раздел <a href="./templates.html" style="color:var(--color-primary)">Шаблоны</a>, нажмите «Загрузить шаблон» и выберите подготовленный .docx файл.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /help-content -->
+    </main>
+  </div>
+</div>
+
+<!-- Toast копирования -->
+<div class="copied-toast" id="copied-toast">Скопировано в буфер обмена</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  Layout.init('templates');
+
+  function copyTag(el) {
+    const text = el.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('copied-toast');
+      toast.textContent = `Скопировано: ${text}`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    });
+  }
+</script>
+</body>
+</html>

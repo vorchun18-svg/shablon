@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ДокПро — Главная</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/main.css">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="hamburger" id="hamburger" aria-label="Меню">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Главная</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" id="theme-toggle" onclick="Layout.toggleTheme()" aria-label="Сменить тему"></button>
+        <a href="./pages/new-document.html" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Новый документ
+        </a>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <!-- Статистика -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">Документов всего</div><div class="stat-value" id="stat-docs">—</div></div>
+        <div class="stat-card"><div class="stat-label">Компаний</div><div class="stat-value" id="stat-companies">—</div></div>
+        <div class="stat-card"><div class="stat-label">Контрагентов</div><div class="stat-value" id="stat-contractors">—</div></div>
+        <div class="stat-card"><div class="stat-label">Шаблонов</div><div class="stat-value" id="stat-templates">—</div></div>
+      </div>
+
+      <!-- Последние документы -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Последние документы</span>
+          <a href="./pages/documents.html" class="btn btn-ghost btn-sm">Все документы →</a>
+        </div>
+        <div id="recent-docs">
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <h3>Документов пока нет</h3>
+            <p>Создайте первый документ по шаблону</p>
+            <a href="./pages/new-document.html" class="btn btn-primary">Создать документ</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="./js/api.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/ui.js"></script>
+<script src="./js/layout.js"></script>
+<script>
+  Layout.init('dashboard');
+
+  async function loadDashboard() {
+    try {
+      const [docs, companies, contractors, templates] = await Promise.all([
+        Api.get('/documents'),
+        Api.get('/companies'),
+        Api.get('/contractors'),
+        Api.get('/templates')
+      ]);
+
+      document.getElementById('stat-docs').textContent = docs.length;
+      document.getElementById('stat-companies').textContent = companies.length;
+      document.getElementById('stat-contractors').textContent = contractors.length;
+      document.getElementById('stat-templates').textContent = templates.length;
+
+      const recent = docs.slice(0, 8);
+      if (recent.length === 0) return;
+
+      document.getElementById('recent-docs').innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Документ</th><th>Тип</th><th>Компания</th>
+              <th>Контрагент</th><th>Дата</th><th></th>
+            </tr></thead>
+            <tbody>
+              ${recent.map(d => `
+                <tr>
+                  <td><span class="font-semibold">${d.title}</span></td>
+                  <td>${UI.docTypeBadge(d.doc_type)}</td>
+                  <td class="text-muted text-sm">${d.company_name||'—'}</td>
+                  <td class="text-muted text-sm">${d.contractor_name||'—'}</td>
+                  <td class="text-muted text-sm">${UI.date(d.created_at)}</td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm btn-download" data-id="${d.id}" data-title="${d.title}">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Скачать
+                    </button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } catch (e) {
+      UI.toast('Ошибка загрузки данных: ' + e.message, 'error');
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

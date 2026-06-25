@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ДокПро — Шаблоны</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .upload-zone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-10);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .upload-zone:hover, .upload-zone.drag { border-color: var(--color-primary); background: var(--color-primary-light); }
+    .upload-zone svg { margin: 0 auto var(--space-3); color: var(--color-text-faint); }
+    .upload-zone p { font-size: var(--text-sm); color: var(--color-text-muted); }
+    .upload-zone strong { color: var(--color-primary); }
+    .tags-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+    .tag-chip { background: var(--color-primary-light); color: var(--color-primary); padding: 2px 10px; border-radius: var(--radius-sm); font-size: var(--text-xs); font-family: monospace; }
+    .tpl-group { margin-bottom: var(--space-8); }
+    .tpl-group-title { font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); margin-bottom: var(--space-3); }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <header class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="hamburger" id="hamburger" aria-label="Меню">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Шаблоны документов</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" id="theme-toggle" onclick="Layout.toggleTheme()"></button>
+        <button class="btn btn-primary" onclick="UI.openModal('upload-modal')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Загрузить шаблон
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <!-- Подсказка по тегам → ссылка на справочник -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <div class="flex items-center gap-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-primary)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span class="card-title">Как подготовить шаблон</span>
+          </div>
+          <a href="./tags-help.html" class="btn btn-primary btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Открыть справочник тегов
+          </a>
+        </div>
+        <div class="card-body" style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-5)">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--color-text-faint);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <div>
+            <div style="font-size:var(--text-sm);font-weight:500;margin-bottom:4px">Вставьте теги <code style="font-family:monospace;background:var(--color-primary-light);color:var(--color-primary);padding:1px 6px;border-radius:4px;font-size:12px">{{company.name}}</code> в нужные места документа Word.</div>
+            <div style="font-size:var(--text-sm);color:var(--color-text-muted)">Полный список тегов с описанием, примерами и функцией копирования — в справочнике.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="list-wrap"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Модалка загрузки -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Загрузить шаблон</span>
+      <button class="btn btn-ghost btn-icon" onclick="UI.closeModal('upload-modal')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p><strong>Выберите файл</strong> или перетащите сюда</p>
+        <p style="margin-top:4px;font-size:var(--text-xs)">Только .docx файлы</p>
+        <div id="file-name" style="margin-top:var(--space-3);font-size:var(--text-sm);color:var(--color-primary);font-weight:500"></div>
+      </div>
+      <input type="file" id="file-input" accept=".docx" style="display:none" onchange="onFileSelect(this)">
+
+      <div class="form-group mt-4">
+        <label class="form-label required">Название шаблона</label>
+        <input type="text" id="tpl-name" class="form-input" placeholder="Договор оказания услуг">
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Тип документа</label>
+        <select id="tpl-type" class="form-select">
+          <option value="Договор">Договор</option>
+          <option value="Спецификация">Спецификация</option>
+          <option value="Акт">Акт</option>
+          <option value="Счёт">Счёт</option>
+          <option value="Другой">Другой</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Описание</label>
+        <textarea id="tpl-desc" class="form-textarea" placeholder="Необязательное описание..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="UI.closeModal('upload-modal')">Отмена</button>
+      <button class="btn btn-primary" id="upload-btn" onclick="uploadTemplate()">Загрузить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка просмотра тегов -->
+<div class="modal-overlay" id="tags-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="tags-modal-title">Теги шаблона</span>
+      <button class="btn btn-ghost btn-icon" onclick="UI.closeModal('tags-modal')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">Теги, найденные в шаблоне:</p>
+      <div id="tags-list" class="tags-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/layout.js"></script>
+<script>
+  Layout.init('templates');
+  let items = [];
+  let selectedFile = null;
+
+  async function load() {
+    try { items = await Api.get('/templates'); render(); }
+    catch(e) { UI.toast(e.message,'error'); }
+  }
+
+  function render() {
+    if (!items.length) {
+      document.getElementById('list-wrap').innerHTML = `
+        <div class="empty-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <h3>Шаблоны не загружены</h3>
+          <p>Загрузите .docx файл с тегами для автозаполнения</p>
+          <button class="btn btn-primary" onclick="UI.openModal('upload-modal')">Загрузить шаблон</button>
+        </div>`;
+      return;
+    }
+
+    // Группируем по типу
+    const groups = {};
+    items.forEach(t => { if (!groups[t.doc_type]) groups[t.doc_type] = []; groups[t.doc_type].push(t); });
+
+    document.getElementById('list-wrap').innerHTML = Object.entries(groups).map(([type, list]) => `
+      <div class="tpl-group">
+        <div class="tpl-group-title">${type}</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Название</th><th>Описание</th><th>Загружен</th><th></th></tr></thead>
+            <tbody>
+              ${list.map(t=>`
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-primary);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <span class="font-semibold">${t.name}</span>
+                    </div>
+                  </td>
+                  <td class="text-sm text-muted">${t.description||'—'}</td>
+                  <td class="text-sm text-muted">${UI.date(t.created_at)}</td>
+                  <td><div class="table-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="showTags(${t.id},'${t.name}')">Теги</button>
+                    <button class="btn btn-danger btn-sm" onclick="del(${t.id})">Удалить</button>
+                  </div></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`).join('');
+  }
+
+  function onFileSelect(input) {
+    selectedFile = input.files[0];
+    if (selectedFile) {
+      document.getElementById('file-name').textContent = '✓ ' + selectedFile.name;
+      if (!document.getElementById('tpl-name').value) {
+        document.getElementById('tpl-name').value = selectedFile.name.replace('.docx','').replace(/_/g,' ');
+      }
+    }
+  }
+
+  // Drag & drop
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag');
+    const f = e.dataTransfer.files[0];
+    if (f?.name.endsWith('.docx')) {
+      selectedFile = f;
+      document.getElementById('file-name').textContent = '✓ ' + f.name;
+      if (!document.getElementById('tpl-name').value) document.getElementById('tpl-name').value = f.name.replace('.docx','');
+    } else { UI.toast('Разрешены только .docx файлы','error'); }
+  });
+
+  async function uploadTemplate() {
+    if (!selectedFile) { UI.toast('Выберите файл','error'); return; }
+    const name = document.getElementById('tpl-name').value.trim();
+    const type = document.getElementById('tpl-type').value;
+    if (!name) { UI.toast('Укажите название шаблона','error'); return; }
+
+    const btn = document.getElementById('upload-btn');
+    UI.btnLoad(btn, true);
+    try {
+      const form = new FormData();
+      form.append('file', selectedFile);
+      form.append('name', name);
+      form.append('doc_type', type);
+      form.append('description', document.getElementById('tpl-desc').value.trim());
+      await Api.upload('/templates', form);
+      UI.toast('Шаблон загружен');
+      UI.closeModal('upload-modal');
+      selectedFile = null;
+      document.getElementById('file-name').textContent = '';
+      document.getElementById('tpl-name').value = '';
+      document.getElementById('tpl-desc').value = '';
+      await load();
+    } catch(e) { UI.toast(e.message,'error'); }
+    UI.btnLoad(btn, false);
+  }
+
+  async function showTags(id, name) {
+    document.getElementById('tags-modal-title').textContent = `Теги: ${name}`;
+    document.getElementById('tags-list').innerHTML = '<span class="text-muted text-sm">Загрузка...</span>';
+    UI.openModal('tags-modal');
+    try {
+      const data = await Api.get(`/templates/${id}/tags`);
+      if (!data.tags.length) {
+        document.getElementById('tags-list').innerHTML = '<span class="text-muted text-sm">Теги не найдены</span>';
+      } else {
+        document.getElementById('tags-list').innerHTML = data.tags.map(t=>`<span class="tag-chip">{{${t}}}</span>`).join('');
+      }
+    } catch(e) { UI.toast(e.message,'error'); }
+  }
+
+  async function del(id) {
+    if (!UI.confirm('Удалить шаблон?')) return;
+    try { await Api.delete('/templates/'+id); UI.toast('Удалено'); await load(); }
+    catch(e) { UI.toast(e.message,'error'); }
+  }
+
+  load();
+</script>
+</body>
+</html>
